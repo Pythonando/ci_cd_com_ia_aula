@@ -2,34 +2,29 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    types: [opened, synchronize, ready_for_review, reopened, closed]
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    if: |
+      (github.event.pull_request.merged != true) && (
+        github.event.pull_request.author_association == 'MEMBER' ||
+        github.event.pull_request.author_association == 'OWNER' ||
+        github.event.pull_request.author_association == 'COLLABORATOR'
+      )
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
@@ -39,6 +34,71 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          use_sticky_comment: 'true'
+          claude_args: |
+            --max-turns 20
+            --system-prompt "Você é um revisor sênior Python/Django. Revise em português. Foque em: segurança (OWASP), queries N+1, lógica de negócio e aderência ao CLAUDE.md do projeto."
+          
+      - name: Gerar testes automaticamente
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Analise o diff deste PR: ${{ github.repository }}/pull/${{ github.event.pull_request.number }}.
+            
+            Para cada função ou método novo que não possua testes correspondentes:
+            1. Crie testes pytest em português
+            2. Salve nos arquivos de teste existentes ou crie novos seguindo o padrão tests/test_*.py
+            3. Faça commit diretamente na branch do PR com a mensagem "test: testes gerados automaticamente pelo Claude"
+            
+            Se todos os novos códigos já tiverem testes, não faça nada e comente no PR: "✅ Cobertura de testes OK"
+          claude_args: |
+            --max-turns 20
 
+  release-notes:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.base.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Gerar Release Notes
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          show_full_output: 'true'
+          prompt: |
+            O PR #${{ github.event.pull_request.number }} foi mergeado.
+            Título: ${{ github.event.pull_request.title }}
+            Autor: ${{ github.event.pull_request.user.login }}
+            Branch: ${{ github.event.pull_request.head.ref }}
+
+            Analise as mudanças deste PR e:
+            1. Abra ou crie o arquivo CHANGELOG.md na raiz do projeto
+            2. Adicione uma nova entrada no topo no seguinte formato:
+
+            ## [DATA] - ${{ github.event.pull_request.title }}
+            **PR:** #${{ github.event.pull_request.number }} por @${{ github.event.pull_request.user.login }}
+
+            ### O que mudou
+            (descrição em linguagem não técnica, acessível para não-desenvolvedores)
+
+            ### Detalhes técnicos
+            (resumo técnico das mudanças principais)
+
+            ---
+
+            3. Faça commit com a mensagem "docs: release notes PR #${{ github.event.pull_request.number }}"
+            4. Faça push direto na branch ${{ github.event.pull_request.base.ref }}
+          claude_args: |
+            --max-turns 15
+            --dangerously-skip-permissions

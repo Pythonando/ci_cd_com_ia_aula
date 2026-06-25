@@ -10,7 +10,8 @@ jobs:
 
     permissions:
       issues: write      
-      contents: read    
+      contents: read
+      id-token: write  
 
     steps:
       - name: Checkout do repositório

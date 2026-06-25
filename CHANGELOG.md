@@ -1,6 +1,21 @@
 # Changelog
 
 ## [2026-06-25] - 11
+**PR:** #6 por @Pythonando
+
+### O que mudou
+O projeto ganhou uma infraestrutura completa de automação com inteligência artificial. Agora o repositório conta com revisão automática de código em cada pull request, triagem automática de issues abertas, geração automática de release notes no CHANGELOG após cada merge, geração automática de testes, e a possibilidade de chamar o Claude diretamente em comentários usando `@claude`. Também foi adicionado o arquivo inicial da aplicação Python e as configurações de permissão do Claude Code.
+
+### Detalhes técnicos
+- **`app.py`**: Novo arquivo Python com dois `print` statements ("Hello, World!" e "teste 2"), base inicial da aplicação.
+- **`.claude/settings.json`**: Configuração de permissões do Claude Code, habilitando operações `Write`, `Edit` e comandos git (`add`, `commit`, `push`).
+- **`.github/workflows/claude-code-issues.yml`**: Novo workflow acionado no evento `issues: opened`. O Claude analisa cada nova issue e posta um comentário estruturado com classificação (tipo, severidade, story points), arquivos afetados, subtarefas sugeridas em checklist, issues relacionadas e observações técnicas.
+- **`.github/workflows/claude-code-review.yml`**: Novo workflow acionado em pull requests. Executa revisão de código com foco em segurança (OWASP), queries N+1 e lógica de negócio (via `/code-review` plugin). Inclui step de geração automática de testes pytest para funções sem cobertura e job `release-notes` que atualiza o `CHANGELOG.md` automaticamente após merge.
+- **`.github/workflows/claude.yml`**: Novo workflow que permite interagir com o Claude via `@claude` em comentários de issues, PRs e revisões de código.
+
+---
+
+## [2026-06-25] - 11
 **PR:** #4 por @Pythonando
 
 ### O que mudou

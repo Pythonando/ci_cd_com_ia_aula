@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-06-26] - 13
+**PR:** #8 por @Pythonando
+
+### O que mudou
+A forma como o sistema de automação se autentica para analisar issues foi atualizada. Antes, era usada uma chave de API direta; agora passa a ser utilizado um token OAuth do Claude Code — um método de autenticação mais seguro e alinhado com as práticas recomendadas pelo serviço.
+
+### Detalhes técnicos
+- **`.github/workflows/claude-code-issues.yml`**: Substituição da chave de autenticação `anthropic_api_key` (secret `ANTHROPIC_API_KEY`) pelo campo `claude_code_oauth_token` (secret `CLAUDE_CODE_OAUTH_TOKEN`) na action `anthropics/claude-code-action@v1`. Migração do método de autenticação de API key para OAuth token.
+
+---
+
 ## [2026-06-25] - 11
 **PR:** #6 por @Pythonando
 

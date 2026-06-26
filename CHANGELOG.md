@@ -1,5 +1,19 @@
 # Changelog
 
+## [2026-06-26] - 15
+**PR:** #10 por @Pythonando
+
+### O que mudou
+O sistema de análise automática de issues foi aprimorado para funcionar de forma mais completa e confiável. Agora ele tem permissão para interagir também com pull requests, exibe o resultado completo das análises realizadas pela IA e consegue executar tarefas mais longas e complexas sem travar no meio do caminho.
+
+### Detalhes técnicos
+- **`.github/workflows/claude-code-issues.yml`**: Três ajustes na action de triagem de issues:
+  - Adicionada permissão `pull-requests: write` ao job, permitindo que o workflow interaja com PRs quando necessário.
+  - Habilitado `show_full_output: 'true'` na action `anthropics/claude-code-action@v1`, garantindo que a saída completa da execução seja exibida nos logs.
+  - Adicionado `claude_args` com `--max-turns 30` (aumenta o limite de iterações do agente) e `--dangerously-skip-permissions` (ignora verificações de permissão interativas para execução não-supervisionada em CI).
+
+---
+
 ## [2026-06-26] - 13
 **PR:** #8 por @Pythonando
 
